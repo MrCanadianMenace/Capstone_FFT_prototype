@@ -1,8 +1,10 @@
 #include <iostream>
 #include <math.h>
 #include <complex>
+#include <chrono>
 
 typedef std::complex<double> dcomp;
+typedef std::complex<int> int_comp;
 const dcomp j(0.0, 1.0);
 
 dcomp twiddle(double power, double base); 
@@ -14,35 +16,52 @@ int main(int argc, char** argv) {
 
 	// The length of a signal determines how many 'steps' are
 	// necessary in the FFT implementation
-	const int sig_length = 2;
+	const int sig_length = atoi(argv[1]);
 	const int num_steps = log2(sig_length);
 
-	// Create a dynamic array to contain each step of the FFT
-	dcomp** layers = new dcomp* [num_steps+1];
-
-	std::cout << "Number of steps required = " << num_steps << std::endl;
-
+	/*
 	std::cout << "Filling twiddle vector" << std::endl;
 	dcomp twiddle_vec[4] = {0};
-	for (int i = 1; i < 4; i++) {
-		twiddle_vec[i] = twiddle(1.0, double(i));
+	for (int i = 0; i < 4; i++) {
+		twiddle_vec[i] = twiddle(double(i), 4);
 
 		std::cout << "|\t" << twiddle_vec[i] << "\t|" << std::endl;
 	}
+	*/
 
-	dcomp* test_list = new dcomp[sig_length] {0, 1}; //, 2, 3, 4}; //, 5, 6, 7}; //, 8, 9, 10, 11, 12, 13, 14, 15};
+	dcomp* test_list = new dcomp[sig_length]; 
 
-	std::cout << "Printing unshuffled vector:" << std::endl;
-	print_vector(test_list, sig_length);
+	for (int count = 1; count <= 5; count++) {
 
-	radix2_shuffle(&test_list, sig_length, num_steps);
+		
+		for (int i = 0; i < sig_length; i++) {
+			test_list[i] = sin(i);
+		}
 
-	std::cout << "Printing shuffled vector:" << std::endl;
-	print_vector(test_list, sig_length);
+		// Start Timer
+		auto fft_start = std::chrono::high_resolution_clock::now();
 
-	butterfly_sum(&test_list, sig_length, num_steps);
+		radix2_shuffle(&test_list, sig_length, num_steps);
+		/*
+		std::cout << "Printing unshuffled vector:" << std::endl;
+		print_vector(test_list, sig_length);
 
-	delete [] layers;
+
+		std::cout << "Printing shuffled vector:" << std::endl;
+		print_vector(test_list, sig_length);
+		*/
+
+		butterfly_sum(&test_list, sig_length, num_steps);
+
+		// Finish Timer
+		auto fft_stop = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(fft_stop - fft_start);
+	
+		std::cout << "Run# " << count  << "  Signal Length: " << sig_length << "  Execution Time: " << duration.count() << " microseconds" << std::endl;
+		//print_vector(test_list, sig_length);
+	}
+
+	delete [] test_list;
 
 	return 0;
 }
@@ -50,6 +69,7 @@ int main(int argc, char** argv) {
 dcomp twiddle(double power, double base) {
 
 	return exp(-2.0 * j * M_PI * power / base);
+	//return dcomp (round(std::real(unrounded_twiddle)), round(std::imag(unrounded_twiddle)));
 }
 
 void radix2_shuffle(dcomp** input_vector, const int sig_length, const int num_steps) {
@@ -121,25 +141,23 @@ void radix2_shuffle(dcomp** input_vector, const int sig_length, const int num_st
 
 void butterfly_sum(dcomp** input_vector, const int sig_length, const int num_steps) {
 
-	dcomp* shuffled_vector = *input_vector;
+	dcomp* current_layer = *input_vector;
 	dcomp* sum_vector = new dcomp[sig_length];
 
 	// Loop through each divide and conquer step of the FFT algorithm
-	for (int layer = num_steps - 1; layer >= 0; layer--) {
+	for (int layer = 0; layer < num_steps; layer++) {
 		
 		// These three parameters will help determine how to loop through the current layer
-		int num_partitions = pow(2.0, double(layer));
+		int layer_order = num_steps - 1 - layer;
+		int num_partitions = pow(2.0, double(layer_order));
 		int partition_length = sig_length / num_partitions;
 		int shuffle_midpoint = partition_length / 2;
 
-		std::cout << "Layer [" << layer << "], # Partitions [" << num_partitions << "], Part Length [" << partition_length << "], Shuffle Midpoint [" << shuffle_midpoint << "]" << std::endl;
+		//std::cout << "Layer [" << layer << "], Layer Order [" << layer_order << "], # Partitions [" << num_partitions << "], Part Length [" << partition_length << "], Shuffle Midpoint [" << shuffle_midpoint << "]" << std::endl;
 
-		// Each step in the layer involves dividing all currently existing partitions in half.
-		// We then treat each partition as an individual array to split it into two new arrays
-		// and shift all values corresponding to the FFT symmetry
 		for (int partition = 0; partition < num_partitions; partition++) {
 
-			std::cout << "Partition " << partition << std::endl;
+			//std::cout << "Partition " << partition << std::endl;
 
 			// Each partition is the same in length so looping through each one will be 
 			// the same.  To adjust for differences in position use the partition number
@@ -148,31 +166,39 @@ void butterfly_sum(dcomp** input_vector, const int sig_length, const int num_ste
 
 				int displaced_i = i + partition * partition_length;
 
-				std::cout << "Adding A(" << 2 * i + partition * partition_length << ") = " << shuffled_vector[2*i + partition * partition_length]  << "+ B(" << displaced_i << ")" << std::endl;
-				std::cout << "Adding A(" << 2 * i + 1 + partition * partition_length << ") = " << shuffled_vector[2*i + 1 + partition * partition_length]  << "+ B(" << displaced_i + shuffle_midpoint << ")" << std::endl;
+				/*
+				std::cout << "P" << layer+1 << "(" << displaced_i 
+					<< ") = P" << layer << "[" << current_layer[displaced_i] 
+					<< "] + W[" << twiddle(displaced_i, pow(2.0, layer + 1)) << "] * P" 
+					<< layer  << "[" << current_layer[displaced_i + shuffle_midpoint] << "]" << std::endl;
 
-				//sum_vector[displaced_i] = shuffled_vector[2*i + partition * partition_length];
-				//sum_vector[displaced_i + shuffle_midpoint] = shuffled_vector[2*i + 1 + partition * partition_length];
+				std::cout << "P" << layer+1 << "(" << displaced_i + shuffle_midpoint
+					<< ") = P" << layer << "[" << current_layer[displaced_i]
+					<< "] + W[" << twiddle(displaced_i + shuffle_midpoint, pow(2.0, layer+1)) << "] * P" 
+					<< layer  << "[" << current_layer[displaced_i + shuffle_midpoint] << "]" << std::endl;
+				*/
+
+				sum_vector[displaced_i] = current_layer[displaced_i] + current_layer[displaced_i + shuffle_midpoint] * twiddle(displaced_i, pow(2.0, layer + 1));
+				sum_vector[displaced_i + shuffle_midpoint] = current_layer[displaced_i] + current_layer[displaced_i + shuffle_midpoint] * twiddle(displaced_i + shuffle_midpoint, pow(2.0, layer + 1));
 			}
 		}
+		//std::cout << std::endl;
 
-		std::cout << "Shuffle Layer " << layer << std::endl;
-		print_vector(sum_vector, sig_length);
-
-		// Assign the current iteration of the shuffle to the input
 		/*
-		dcomp* tmp_ptr = shuffled_vector;
-		shuffled_vector = sum_vector;
-		sum_vector = tmp_ptr;
+		std::cout << "FFT Layer " << layer << std::endl;
+		print_vector(sum_vector, sig_length);
 		*/
+
+		// Assign the sum from the current iteration to the current layer
+		dcomp* tmp_ptr = current_layer;
+		current_layer = sum_vector;
+		sum_vector = tmp_ptr;
 	}
 	
+	*input_vector = current_layer;
 	/*
-	std::cout << "Input vector" << std::endl;
-	print_vector(shuffled_vector, sig_length);
-
-	std::cout << "Sum vector" << std::endl;
-	print_vector(sum_vector, sig_length);
+	std::cout << "FFT Output:" << std::endl;
+	print_vector(current_layer, sig_length);
 	*/
 
 	delete [] sum_vector;
@@ -181,7 +207,8 @@ void butterfly_sum(dcomp** input_vector, const int sig_length, const int num_ste
 void print_vector(dcomp* test_list, int length) {
 
 	for (int i = 0; i < length; i++) {
-		std::cout << "|\t" << test_list[i] << "\t|" << std::endl;
+		dcomp unrounded_complex = test_list[i];
+		printf("|\t(%.3f, %.3f)\t|\n", std::real(unrounded_complex), std::imag(unrounded_complex));
 	}
 	std::cout << std::endl;
 }
