@@ -1,3 +1,6 @@
+# Verilog compilation output
+*.vcd
+
 # etc
 *.out
 *.swp
