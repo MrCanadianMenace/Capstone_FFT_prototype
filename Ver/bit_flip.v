@@ -1,24 +1,26 @@
 module bit_flip 
-    #(parameter REG_LENGTH = 4) (
-    out,
-    in
-);
+    // INDEX: Signal Vector index register, used to swap signal entries
+    // M: Signal entry word size
+    #(parameter INDEX = 4) (
+        out,
+        in
+    );
 
+    input wire [INDEX-1:0] in;
+    output reg [INDEX-1:0] out;
 
-input wire [REG_LENGTH-1:0] in;
-output wire [REG_LENGTH-1:0] out;
+    integer i;
+    always @(in) begin
+    
+        // Don't swap outer values
+        out[0] <= in[0];
+        out[INDEX-1] <= in[INDEX-1];
 
-// Swap outer values
-assign out[0] = in[0];
-assign out[REG_LENGTH-1] = in[REG_LENGTH-1];
-
-// Swap all middle values
-generate
-genvar i;
-    for (i=1; i<REG_LENGTH/2; i=i+1) begin
-        assign out[i] = in[REG_LENGTH-1-i];
-        assign out[REG_LENGTH-1-i] = in[i];
+        // Swap all middle values
+        for (i=1; i<INDEX/2; i=i+1) begin
+            out[i] <= in[INDEX-1-i];
+            out[INDEX-1-i] <= in[i];
+        end
     end
-endgenerate
 
 endmodule

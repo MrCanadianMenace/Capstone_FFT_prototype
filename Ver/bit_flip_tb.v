@@ -3,7 +3,7 @@ module bit_flip_tb;
 reg [15:0] in = 16'b0000_0000_0000_0000;
 wire [15:0] out; 
 
-bit_flip #(.REG_LENGTH(16)) TEST_UNIT (
+bit_flip #(.INDEX(16)) TEST_UNIT (
     .out (out),
     .in (in)
 );
