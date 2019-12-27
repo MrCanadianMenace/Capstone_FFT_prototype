@@ -1,9 +1,9 @@
 module bit_flip_tb;
 
-reg [15:0] in = 16'b0000_0000_0000_0000;
-wire [15:0] out; 
+reg [7:0] in [3:0] = '{ 8'd0, 8'd0, 8'd0, 8'd0};
+wire [7:0] out [3:0]; 
 
-bit_flip #(.INDEX(16)) TEST_UNIT (
+bit_flip #(.INDEX(4), .M(8)) TEST_UNIT (
     .out (out),
     .in (in)
 );
@@ -16,7 +16,7 @@ initial begin
 
     // Wait 5 nanoseconds
     #5
-    in = 16'b1111_1111_0000_0000;
+    in = '{ 8'd1, 8'd2, 8'd3, 8'd4};
 
     //#5
     //in = 4'b0101;

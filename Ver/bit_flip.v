@@ -1,16 +1,20 @@
 module bit_flip 
     // INDEX: Signal Vector index register, used to swap signal entries
     // M: Signal entry word size
-    #(parameter INDEX = 4) (
+    #(parameter INDEX = 4, M = 8) (
         out,
         in
     );
 
-    input wire [INDEX-1:0] in;
-    output reg [INDEX-1:0] out;
+    //input in;
+    //output out; 
+
+    // Define input and output as vectors of M size
+    input wire [M-1:0] in [INDEX-1:0];
+    output reg [M-1:0] out [INDEX-1:0];
 
     integer i;
-    always @(in) begin
+    always @(*) begin
     
         // Don't swap outer values
         out[0] <= in[0];
