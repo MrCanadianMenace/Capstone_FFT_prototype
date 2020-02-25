@@ -4,3 +4,6 @@
 # etc
 *.out
 *.swp
+
+# Verilator build directory
+obj_dir

@@ -2,13 +2,6 @@
 clean:
 	rm *.{vcd,out}
 
-add_tb:
-	iverilog -o add.out complex_add_tb.v complex_add.v
-
-add_waveform: add_tb
-	vvp add.out
-	gtkwave complex_add_test.vcd &
-
 sub_tb:
 	iverilog -o sub.out complex_sub_tb.v complex_sub.v
 
