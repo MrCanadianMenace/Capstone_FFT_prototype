@@ -1,3 +1,7 @@
+default:
+	@echo "Must be run with an option:"
+	@echo "	clean add_tb add_waveform add_verilator"
+
 .PHONY: clean
 clean:
 	rm -f *.{vcd,out}
@@ -12,9 +16,15 @@ add_waveform: add_tb
 	gtkwave complex_add_test.vcd &
 
 add_verilator:
-	echo "Generating Verilator files"
+	@echo ""; echo "Generating Verilator files"
 	verilator -Wall -cc complex_add.v
-	echo "Building Verilator Test Libs"
+	@echo ""; echo "Building Verilator Test Libs"
 	$(MAKE) -C obj_dir -f Vcomplex_add.mk
-	echo "Building Verilator Testbench"
-	g++ -I./obj_dir -I/usr/share/verilator/include /usr/share/verilator/include/verilated.cpp obj_dir/*.h obj_dir/*.o VTest.cpp -o Vcomplex_add_sim
+	@echo ""; echo "Building Verilator Testbench"
+	g++ -I./obj_dir \
+		-I/usr/share/verilator/include \
+		/usr/share/verilator/include/verilated.cpp \
+		obj_dir/*.h \
+		obj_dir/*.o \
+		VTest.cpp \
+		-o Vcomplex_add_sim
