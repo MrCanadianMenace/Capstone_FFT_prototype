@@ -24,6 +24,7 @@ add_verilator:
 	g++ -I./obj_dir \
 		-I/usr/share/verilator/include \
 		/usr/share/verilator/include/verilated.cpp \
+		fixed_point.cpp \
 		obj_dir/*.h \
 		obj_dir/*.o \
 		VTest.cpp \
