@@ -49,6 +49,11 @@ complex_add TEST_UNIT (
         A = 16'd67;
         B = 16'd420;
 
+        #2
+        // Fixed point conversion check
+        A = 8'h04;
+        B = 8'h04;
+
         #2 $finish;
     end
 endmodule
